@@ -2,7 +2,7 @@ function [dtw_fii, tr_dtw] = compute_dtw_fii(x, y, gamma, FWHM, win_size)
 % compute_dtw_fii - Computes FII and time-resolved DTW for a pair of signals.
 %
 % Syntax:
-%   [dtw_fii, tr_dtw] = compute_group_dtw(x, y, gamma, Tr, band)
+%   [dtw_fii, tr_dtw] = compute_dtw_fii(x, y, gamma, Tr, band)
 %
 % Inputs:
 %   x         - A single time course
