@@ -2,7 +2,7 @@ function [full_dtw_fii, full_tr_dtw] = compute_subject_dtw_fii(subTcs, gamma, FW
 % compute_subject_dtw_fii - Computes FII and time-resolved DTW metrics for all subjects and unique component pairs.
 %
 % Syntax:
-%   [full_dtw_fii, full_tr_dtw] = compute_group_dtw(subTcs, gamma, Tr, band)
+%   [full_dtw_fii, full_tr_dtw] = compute_subject_dtw_fii(subTcs, gamma, FWHM, win_size)
 %
 % Inputs:
 %   subTcs    - A 3D matrix of time courses with dimensions 
@@ -13,10 +13,9 @@ function [full_dtw_fii, full_tr_dtw] = compute_subject_dtw_fii(subTcs, gamma, FW
 %
 % Outputs:
 %   full_dtw_fii    - A 3D array of functional inertia index values with
-%   dimensions [num_subjects x num_timepoints-win_size x num_features].
-%                     [num_gammas x num_subjects x num_features], where num_features = nchoosek(num_components, 2).
+%   dimensions [num_subjects x (num_timepoints-win_size) x num_features], where num_features = nchoosek(num_components, 2).
 %   full_tr_dtw     - A 3D array of time-resolved DTW distances with
-%   dimensions [num_subjects x num_timepoints x num_features]..
+%   dimensions [num_subjects x num_timepoints x num_features].
 %
 % Description:
 %   This function computes the functional inertia index from the time-resolved DTW distances 
