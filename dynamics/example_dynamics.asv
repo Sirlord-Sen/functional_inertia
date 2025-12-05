@@ -1,0 +1,87 @@
+%% Clear Environment and Set Paths
+clc;clear;
+addpath(genpath('./'));
+
+%% Data Initialization
+% Define parameters for simulated fMRI time courses.
+num_subjects   = 50;         % Number of subjects
+num_timepoints = 150;         % Number of timepoints per subject
+num_components = 5;         % Number of components per subject
+num_features   = nchoosek(num_components, 2); % Number of unique component pairs
+Tr             = 0.72;       % Repetition time (s)
+Fs             = 1/Tr;       % Sampling frequency (Hz)
+nyquist        = Fs/2;       % Nyquist frequency
+band           = [0.01 0.15];  % Frequency band for post-processing
+cutoff         = [0.6 1.5];     % Filter cutoff parameters (adjust until filter is stable)
+
+% Generate example post-processed fMRI timecourses for each session.
+% The post_processing function is assumed to be available.
+subTcs = randn(num_subjects, num_timepoints, num_components);
+subTcs = post_processing(subTcs, Tr, band, cutoff);
+
+%% DTW Parameters
+% Define a range of gamma values for the DTW computation.
+gamma = 1.5;
+win_size = calculate_window_size(Tr, band);
+FWHM = 5; % For gaussian smoothing before derivative
+%% fii and trDTW computation across all subjects.
+[subs_fii, subs_tr_DTW] = compute_subject_dtw_fii(subTcs, gamma, FWHM, win_size);
+fii_timepoints = size(subs_fii, 2); %effective length of FII timepoints due to cumulative effect
+%% Groupings
+% Define group labels: schizophrenia subjects (1) and controls (0).
+sz_label = 1;
+cn_label = 0;
+group = randi([cn_label, sz_label], num_subjects, 1);  % Random binary group assignment
+
+% Separate subjects into two groups based on cluster index
+sz_idx = find(group == sz_label);
+cn_idx = find(group == cn_label);
+
+% Count the number of subjects in each group
+num_sz = length(sz_idx);
+num_cn = length(cn_idx);
+%%  Perform K-means
+% Concatenate subjects and time of the trFNC to get a 2D matrix
+tr_DTW_k = reshape(subs_tr_DTW, num_subjects*num_timepoints, num_features);
+
+% Define the number of clusters
+num_clusters = 3; % Choose based on elbow criteria
+replications = 20;
+maxIter = 10000; % Maximum iterations
+distance = 'cityblock'; %Can change to distance of choice (e.g. squeclidean)
+useParallel = 1; %Use parallel processing for faster clustering
+doDisplay = 1; % Display to show process...
+
+% Perform k-means
+% [cluster_idx, cluster_c, cluster_sumd, cluster_D] = calculate_kmeans(tr_DTW_k, num_clusters, distance, replications, maxIter, useParallel, doDisplay);
+% cluster_idx = reshape(cluster_idx, subjects_cnt, []); 
+
+% Generate random cluster indices for trDTW to mimic kmeans index output
+cluster_idx = randi([1 num_clusters], num_subjects * num_timepoints, 1);
+
+% Reshape into subjects x timepoints
+cluster_idx = reshape(cluster_idx, num_subjects, num_timepoints);
+
+%% Extract groups from metrics
+% Extract trFNC data for each group
+tr_DTW_sz = subs_tr_DTW(sz_idx, :, :);
+tr_DTW_cn = subs_tr_DTW(cn_idx, :, :);
+
+% Reshape cluster indices for each group
+cluster_idx_sz = cluster_idx(sz_idx, :);
+cluster_idx_cn = cluster_idx(cn_idx, :);
+
+%% Extract subject states for each group
+% Identify group-specific centroids
+sub_centroids_sz = group_sub_centroids(tr_DTW_sz, cluster_idx_sz, num_clusters);
+% sub_centroids_cn = group_sub_centroids(tr_DTW_cn, cluster_idx_cn, num_clusters);
+
+%% Analyze groups' cluster dynamics
+% Compute cluster analysis metrics for each subject in each group
+[mdt, fr, tm, tc] = trFNC_cluster_analysis(cluster_idx, num_clusters);
+[mdt_sz, fr_sz, tm_sz, tc_sz] = trFNC_cluster_analysis(cluster_idx_sz, num_clusters);
+[mdt_cn, fr_cn, tm_cn, tc_cn] = trFNC_cluster_analysis(cluster_idx_cn, num_clusters);
+
+% Perform statistical tests on mean dwell time (mdt), fractional occupancy
+% (fr), transition matrix (tm) and transition count (tc)
+
